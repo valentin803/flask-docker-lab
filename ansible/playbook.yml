@@ -1,0 +1,80 @@
+- name: Configure Ubuntu server, Docker and Nginx
+  hosts: aws_servers
+  become: true
+
+  tasks:
+    - name: Refresh the apt package index
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install basic tools, Docker and Nginx
+      ansible.builtin.apt:
+        name:
+          - htop
+          - unzip
+          - docker.io
+          - nginx
+        state: present
+
+    - name: Ensure Docker is running and enabled at startup
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Check Docker version
+      ansible.builtin.command: docker --version
+      changed_when: false
+
+    - name: Configure Nginx as a reverse proxy
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-available/devops-lab
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          server {
+              listen 80 default_server;
+              listen [::]:80 default_server;
+              server_name _;
+
+              location / {
+                  proxy_pass http://127.0.0.1:5000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+      notify: Restart Nginx
+
+    - name: Remove the default Nginx site
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Restart Nginx
+
+    - name: Enable the DevOps Lab Nginx site
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/devops-lab
+        dest: /etc/nginx/sites-enabled/devops-lab
+        state: link
+      notify: Restart Nginx
+
+    - name: Test the Nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Ensure Nginx is running and enabled at startup
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
