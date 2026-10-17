@@ -1,0 +1,39 @@
+name: DevOps Lab - Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "ansible/**"
+      - "terraform/**"
+      - ".github/workflows/deploy.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devops-lab-deploy
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          test -f terraform/main.tf
+          test -f ansible/playbook.yml
+          test -f app/Dockerfile
+          test -f app/app.py
+          test -f app/requirements.txt
+
+      - name: Confirm project structure
+        run: echo "Project files verified successfully."
