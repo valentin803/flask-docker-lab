@@ -15,13 +15,13 @@
           - unzip
           - docker.io
           - nginx
-        state: present
+        state: present  # ce faci cu unzip si htp ?
 
     - name: Ensure Docker is running and enabled at startup
       ansible.builtin.service:
         name: docker
         state: started
-        enabled: true
+        enabled: true # cum func actiunea asta ?
 
     - name: Check Docker version
       ansible.builtin.command: docker --version
@@ -47,12 +47,12 @@
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto $scheme;
               }
-          }
+          } # ce fac toti param astia de location, ce face fiecare in parte ? 
       notify: Restart Nginx
 
     - name: Remove the default Nginx site
       ansible.builtin.file:
-        path: /etc/nginx/sites-enabled/default
+        path: /etc/nginx/sites-enabled/default  # asta de ce faci ?
         state: absent
       notify: Restart Nginx
 
@@ -61,7 +61,7 @@
         src: /etc/nginx/sites-available/devops-lab
         dest: /etc/nginx/sites-enabled/devops-lab
         state: link
-      notify: Restart Nginx
+      notify: Restart Nginx  # de ce are nevoie de restart
 
     - name: Test the Nginx configuration
       ansible.builtin.command: nginx -t
@@ -77,4 +77,4 @@
     - name: Restart Nginx
       ansible.builtin.service:
         name: nginx
-        state: restarted
+        state: restarted # ce fac handlers in ansible ? 
