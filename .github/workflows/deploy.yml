@@ -1,0 +1,40 @@
+name: DevOps Lab - Deploy
+
+on:
+  workflow_dispatch:
+  push: # cum adica push ce inseamna asta ?
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "ansible/**"
+      - "terraform/**"
+      - ".github/workflows/deploy.yml" # ce face paths ? de ce ai steluta ?
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devops-lab-deploy # ce e ala un grup de workeri ? la ce ajuta ce sens are? de ce fol 1 ?
+  cancel-in-progress: false # ce face canncel in prog ? cine ti a zis de el ? care e best practice ?
+
+jobs:
+  validate:
+    name: Validate project
+    runs-on: ubuntu-latest # de ce latest ? ce versiune e asta, alege 1 si justifica! - unde sunt pasii unde in wokrer instalezi ce ai nevoie efectiv e de pomana gh action asta
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      # asta nu face nimic, trebuia build push deploy plm ce am vorbit asta nu face nimic este efectiv un checkout! explica ce face checkout
+      - name: Check required files
+        run: |
+          test -f terraform/main.tf
+          test -f ansible/playbook.yml
+          test -f app/Dockerfile
+          test -f app/app.py
+          test -f app/requirements.txt
+      # pasul asta are 0 sens !
+      - name: Confirm project structure
+        run: echo "Project files verified successfully."
+
