@@ -1,13 +1,17 @@
+# playbook-ul instaleaza docker si nginx dar nu vad niciun task care sa porneasca aplicatia
+# cine porneste containerul pe portul 5000 ? ce raspunde nginx daca pe 5000 nu asculta nimic ? ce status code ?
+# scrie comanda exacta cu care rulezi playbook-ul si explica fiecare argument
 - name: Configure Ubuntu server, Docker and Nginx
-  hosts: aws_servers
-  become: true
+  hosts: aws_servers # unde e definit grupul asta ? cum ajunge ip-ul din terraform output in inventory ?
+  become: true # ce face become ? cu ce user se conecteaza ansible pe server si prin ce (protocol, cheie) ? trebuie instalat ceva pe server ca sa mearga ansible ?
 
   tasks:
     - name: Refresh the apt package index
       ansible.builtin.apt:
         update_cache: true
-        cache_valid_time: 3600
+        cache_valid_time: 3600 # ce face parametrul asta ? ce se intampla daca rulezi playbook-ul de 2 ori in 10 minute ?
 
+    # care e diff intre pachetul docker.io si docker-ce ? care e diff intre state present si latest ?
     - name: Install basic tools, Docker and Nginx
       ansible.builtin.apt:
         name:
@@ -24,15 +28,17 @@
         enabled: true
 
     - name: Check Docker version
-      ansible.builtin.command: docker --version
-      changed_when: false
+      ansible.builtin.command: docker --version # care e diff intre modulele command si shell ? la ce te ajuta taskul asta ?
+      changed_when: false # ce face changed_when ? ce inseamna ca un playbook e idempotent si cum verifici ca al tau este ?
 
+    # ce e un reverse proxy si de ce pui nginx in fata la flask in loc sa expui direct portul 5000 ?
+    # de ce copy cu content si nu modulul template ? cand ai alege template ?
     - name: Configure Nginx as a reverse proxy
       ansible.builtin.copy:
         dest: /etc/nginx/sites-available/devops-lab
         owner: root
         group: root
-        mode: "0644"
+        mode: "0644" # ce inseamna 0644 - cine are voie sa faca ce ? de ce e in ghilimele ?
         content: |
           server {
               listen 80 default_server;
@@ -60,9 +66,11 @@
       ansible.builtin.file:
         src: /etc/nginx/sites-available/devops-lab
         dest: /etc/nginx/sites-enabled/devops-lab
-        state: link
+        state: link # ce e un symlink ? de ce are nginx si sites-available si sites-enabled ?
       notify: Restart Nginx
 
+    # handlerul Restart Nginx ruleaza inainte sau dupa taskul asta ? daca config-ul e gresit te mai salveaza nginx -t ?
+    # cum ai valida config-ul inainte sa ajunga pe disc ?
     - name: Test the Nginx configuration
       ansible.builtin.command: nginx -t
       changed_when: false
@@ -74,6 +82,7 @@
         enabled: true
 
   handlers:
+    # care e diff intre restarted si reloaded ? care din ele taie conexiunile active si pe care ai folosi-o aici ?
     - name: Restart Nginx
       ansible.builtin.service:
         name: nginx

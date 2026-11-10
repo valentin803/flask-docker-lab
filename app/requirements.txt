@@ -1,1 +1,3 @@
+# de ce versiune fixa cu == ? care e diff fata de >= sau ~= ?
+# Flask aduce si alte pachete (Werkzeug, Jinja2 etc) - versiunile lor sunt fixate undeva ? cum obtii un build reproductibil ?
 Flask==3.1.2

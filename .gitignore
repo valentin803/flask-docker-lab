@@ -1,10 +1,13 @@
 # Terraform
+# .terraform/ e ignorat dar .terraform.lock.hcl e in repo - de ce unul da si altul nu ? ce contine fiecare ?
 **/.terraform/
+# ce contine un tfstate si de ce nu are ce cauta in git ?
 *.tfstate
 *.tfstate.*
 *.tfplan
 crash.log
 crash.*.log
+# ce e un fisier tfvars ? de ce il ignori ? in proiectul asta ai vreunul ?
 *.tfvars
 *.tfvars.json
 
@@ -15,6 +18,8 @@ crash.*.log
 .env.*
 
 # Ansible local inventory
+# inventory e ignorat - atunci de unde stie altcineva (sau un pipeline) ce servere sunt in grupul aws_servers ?
+# ce ai facut gresit daca un .pem sau un .env a ajuns deja intr-un commit ? ajunge sa il adaugi aici dupa ?
 ansible/inventory.ini
 *.retry
 
