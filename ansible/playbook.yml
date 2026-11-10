@@ -1,45 +1,39 @@
-# playbook-ul instaleaza docker si nginx dar nu vad niciun task care sa porneasca aplicatia
-# cine porneste containerul pe portul 5000 ? ce raspunde nginx daca pe 5000 nu asculta nimic ? ce status code ?
-# scrie comanda exacta cu care rulezi playbook-ul si explica fiecare argument
-- name: Configure Ubuntu server, Docker and Nginx
-  hosts: aws_servers # unde e definit grupul asta ? cum ajunge ip-ul din terraform output in inventory ?
-  become: true # ce face become ? cu ce user se conecteaza ansible pe server si prin ce (protocol, cheie) ? trebuie instalat ceva pe server ca sa mearga ansible ?
+- name: Configure Ubuntu server, Docker and Nginx # ce e un play si ce e un task ? cate play-uri ai aici ?
+  hosts: aws_servers # unde e definit grupul asta ? nu vad inventory in repo, arata-mi-l. cum ajunge ip-ul din terraform in el ?
+  become: true # ce face become ? cu ce user intri pe server si cum ? ce trebuie sa existe pe server ca sa mearga ansible ?
 
-  tasks:
+  tasks: # in ce ordine ruleaza taskurile ? ce se intampla cu restul daca unul pica ? ce e "Gathering Facts" care apare primul desi nu l-ai scris ?
     - name: Refresh the apt package index
-      ansible.builtin.apt:
-        update_cache: true
-        cache_valid_time: 3600 # ce face parametrul asta ? ce se intampla daca rulezi playbook-ul de 2 ori in 10 minute ?
+      ansible.builtin.apt: # ce e un modul ? ce inseamna ansible.builtin ? de ce modulul apt si nu command: apt install ?
+        update_cache: true # ce comanda ai fi dat de mana in loc de asta ?
+        cache_valid_time: 3600 # ce face asta ? ce se intampla daca rulezi playbook-ul de 2 ori in 10 minute ?
 
-    # care e diff intre pachetul docker.io si docker-ce ? care e diff intre state present si latest ?
-    - name: Install basic tools, Docker and Nginx
+    - name: Install basic tools, Docker and Nginx # ce inseamna ca un task e idempotent ? ce vezi la a 2-a rulare - ok sau changed ?
       ansible.builtin.apt:
         name:
           - htop
           - unzip
-          - docker.io
+          - docker.io # care e diff intre docker.io si docker-ce ?
           - nginx
         state: present
 
     - name: Ensure Docker is running and enabled at startup
-      ansible.builtin.service:
+      ansible.builtin.service: # care e diff intre modulul service si systemd ?
         name: docker
-        state: started
+        state: started # care e diff intre started restarted si reloaded ?
         enabled: true
 
     - name: Check Docker version
-      ansible.builtin.command: docker --version # care e diff intre modulele command si shell ? la ce te ajuta taskul asta ?
-      changed_when: false # ce face changed_when ? ce inseamna ca un playbook e idempotent si cum verifici ca al tau este ?
+      ansible.builtin.command: docker --version # de ce command si nu shell ? care e diff ? unde vezi outputul comenzii asteia ? ce fac register si debug ?
+      changed_when: false # ce face asta ? ce ai vedea in recap daca il stergi ?
 
-    # ce e un reverse proxy si de ce pui nginx in fata la flask in loc sa expui direct portul 5000 ?
-    # de ce copy cu content si nu modulul template ? cand ai alege template ?
     - name: Configure Nginx as a reverse proxy
-      ansible.builtin.copy:
+      ansible.builtin.copy: # de ce copy si nu template ? ce e jinja2 ? cum ai scoate portul 5000 intr-o variabila ?
         dest: /etc/nginx/sites-available/devops-lab
         owner: root
         group: root
-        mode: "0644" # ce inseamna 0644 - cine are voie sa faca ce ? de ce e in ghilimele ?
-        content: |
+        mode: "0644" # ce inseamna 0644 ? de ce e in ghilimele ?
+        content: | # ce face | in yaml ? care e diff fata de > ?
           server {
               listen 80 default_server;
               listen [::]:80 default_server;
@@ -54,12 +48,12 @@
                   proxy_set_header X-Forwarded-Proto $scheme;
               }
           }
-      notify: Restart Nginx
+      notify: Restart Nginx # cand ruleaza handlerul - imediat sau la final ? 3 taskuri dau notify, de cate ori ruleaza ? mai ruleaza daca taskul nu a schimbat nimic ?
 
     - name: Remove the default Nginx site
-      ansible.builtin.file:
+      ansible.builtin.file: # modulul file sterge, face linkuri, face directoare - de unde stie ce sa faca ?
         path: /etc/nginx/sites-enabled/default
-        state: absent
+        state: absent # ce se intampla daca fisierul nu exista deja ? da eroare ?
       notify: Restart Nginx
 
     - name: Enable the DevOps Lab Nginx site
@@ -69,21 +63,23 @@
         state: link # ce e un symlink ? de ce are nginx si sites-available si sites-enabled ?
       notify: Restart Nginx
 
-    # handlerul Restart Nginx ruleaza inainte sau dupa taskul asta ? daca config-ul e gresit te mai salveaza nginx -t ?
-    # cum ai valida config-ul inainte sa ajunga pe disc ?
     - name: Test the Nginx configuration
-      ansible.builtin.command: nginx -t
+      ansible.builtin.command: nginx -t # asta ruleaza inainte sau dupa restart ? daca config-ul e gresit ce se intampla cu nginx ? cum validezi inainte sa scrii fisierul ?
       changed_when: false
 
-    - name: Ensure Nginx is running and enabled at startup
+    - name: Ensure Nginx is running and enabled at startup # daca nginx e deja pornit ce face taskul asta ?
       ansible.builtin.service:
         name: nginx
         state: started
         enabled: true
 
   handlers:
-    # care e diff intre restarted si reloaded ? care din ele taie conexiunile active si pe care ai folosi-o aici ?
-    - name: Restart Nginx
+    - name: Restart Nginx # ce se intampla daca la notify scrii numele gresit ? de ce restart si nu reload ? care taie conexiunile ?
       ansible.builtin.service:
         name: nginx
         state: restarted
+
+# scrie comanda exacta cu care rulezi playbook-ul si explica fiecare argument. ce fac --check si --diff ? cum rulezi doar un task ?
+# playbook-ul instaleaza docker si nginx dar nu vad niciun task care porneste aplicatia. cine porneste containerul pe 5000 ? ce raspunde nginx daca nu e nimic acolo ?
+# scrie tu taskurile care lipsesc ca sa porneasca containerul din ansible si explica ce modul ai folosit
+# ce e un role in ansible ? cum ai sparge playbook-ul asta in roles ? ce e ansible.cfg ? unde ai tine o parola - ce e ansible vault ?

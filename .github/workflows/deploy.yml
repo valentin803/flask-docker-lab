@@ -1,17 +1,16 @@
 name: DevOps Lab - Deploy
 
 on:
-  workflow_dispatch: # ce e triggerul asta ? de unde il pornesti ? ce alte triggere mai cunosti (macar 2) ?
+  workflow_dispatch:
   push:
     branches:
-      - main # workflow-ul ruleaza si pe un pull request catre main ? cum ai face sa ruleze validarea inainte de merge ?
+      - main
     paths:
       - "app/**"
       - "ansible/**"
       - "terraform/**"
       - ".github/workflows/deploy.yml"
 
-# ce e GITHUB_TOKEN si cine il creeaza ? ce inseamna least privilege ? ce permisiuni ar avea jobul daca stergi blocul asta ?
 permissions:
   contents: read
 
@@ -19,8 +18,6 @@ concurrency:
   group: devops-lab-deploy
   cancel-in-progress: false
 
-# care e diff intre workflow, job si step ? daca ai 2 joburi ruleaza in paralel sau pe rand ? ce face needs ?
-# ce e un runner ? ce ramane pe el dupa ce se termina jobul ?
 jobs:
   validate:
     name: Validate project
@@ -28,9 +25,8 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # ce inseamna @v4 ? care e diff intre a fixa un action dupa tag si dupa commit SHA ? care e mai sigur si de ce ?
+        uses: actions/checkout@v4
 
-      # de unde stie github ca un step a picat ? ce e un exit code ? ce se intampla cu pasii urmatori daca primul test -f pica ?
       - name: Check required files
         run: |
           test -f terraform/main.tf
@@ -41,7 +37,3 @@ jobs:
 
       - name: Confirm project structure
         run: echo "Project files verified successfully."
-
-# workflow-ul se numeste Deploy - cand o sa faca deploy pe bune o sa aiba nevoie de acces la AWS si de cheia SSH
-# unde le tii ? ce e un secret in github actions si cine il poate citi ? ce e OIDC si de ce e preferat fata de access keys ?
-# descrie in cuvinte pasii unui pipeline complet pentru proiectul asta, de la git push pana la aplicatia noua pe server
